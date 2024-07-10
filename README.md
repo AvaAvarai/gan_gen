@@ -1,10 +1,10 @@
 # gan_gen
 
-Synthetic data generation experiments with GANs to compare with CTGAN results.
+Synthetic data generation experiments with GANs to compare our lab's results with CTGAN results.
 
 ## folders
 
-Folders have different GAN implementations. With individual `requirements.txt` for Python pip library installation.
+Each folder has a different GAN implementation. With individual for each sub-project in a `requirements.txt` in the folder for Python pip library installation.
 
 ### ctgan_lib_test
 

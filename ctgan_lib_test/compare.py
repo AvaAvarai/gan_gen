@@ -1,41 +1,65 @@
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import os
+from sklearn.preprocessing import StandardScaler
+from matplotlib.colors import hsv_to_rgb
 
-# Load the original and synthetic Iris datasets
+# Load the original Iris dataset
 original_data = pd.read_csv('original_iris.csv')
-synthetic_data = pd.read_csv('synthetic_iris_5000.csv')
 
-# Create pairplot for the original Iris data and save it to a file
-pairplot_original = sns.pairplot(original_data, hue='target')
+# Get the unique class names and sort them alphabetically
+class_names = sorted(original_data['target'].unique())
+
+# Dynamically generate a color palette by subdividing the HSV space
+hsv_colors = [(i / len(class_names), 1, 1) for i in range(len(class_names))]
+rgb_colors = [hsv_to_rgb(hsv) for hsv in hsv_colors]
+class_palette = {class_name: rgb_colors[i] for i, class_name in enumerate(class_names)}
+
+# Function to add a single legend
+def add_legend(fig, class_order, class_palette):
+    handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=class_palette[class_name], markersize=10) for class_name in class_order]
+    labels = class_order
+    fig.legend(handles, labels, loc='center right', title='Classes')
+
+# Normalize the feature columns
+scaler = StandardScaler()
+original_data[original_data.columns[:-1]] = scaler.fit_transform(original_data[original_data.columns[:-1]])
+
+# Create and save pairplot for the original Iris data using the consistent palette
+pairplot_original = sns.pairplot(original_data, hue='target', palette=class_palette)
 pairplot_original.fig.suptitle('Original Iris Data', y=1.02)
+
+# Add a single legend to the original data plot
+add_legend(pairplot_original.fig, class_names, class_palette)
+
 pairplot_original.fig.savefig('pairplot_original_iris.png')
+plt.close(pairplot_original.fig)  # Close the figure to save memory
 
-# Create pairplot for the synthetic Iris data and save it to a file
-pairplot_synthetic = sns.pairplot(synthetic_data, hue='target')
-pairplot_synthetic.fig.suptitle('Synthetic Iris Data', y=1.02)
-pairplot_synthetic.fig.savefig('pairplot_synthetic_iris_5000.png')
+# Define the list of epochs
+epochs_list = range(1000, 10001, 1000)
 
-# close the pairplot figures
-plt.close('all')
+# Directory containing the synthetic datasets
+results_dir = 'results2'
 
-# Load the saved pairplot images
-original_image = plt.imread('pairplot_original_iris.png')
-synthetic_image = plt.imread('pairplot_synthetic_iris_5000.png')
+# Create pair plots for each synthetic dataset
+for epochs in epochs_list:
+    synthetic_data_path = os.path.join(results_dir, f'synthetic_iris_complete_{epochs}.csv')
+    
+    # Load the synthetic dataset
+    synthetic_data = pd.read_csv(synthetic_data_path)
+    
+    # Normalize the feature columns
+    synthetic_data[synthetic_data.columns[:-1]] = scaler.transform(synthetic_data[synthetic_data.columns[:-1]])
+    
+    # Create and save pairplot for the synthetic Iris data using the consistent palette
+    pairplot_synthetic = sns.pairplot(synthetic_data, hue='target', palette=class_palette)
+    pairplot_synthetic.fig.suptitle(f'Synthetic Data of Iris at {epochs} Epochs', y=1.02)
+    
+    # Add a single legend to the synthetic data plot
+    add_legend(pairplot_synthetic.fig, class_names, class_palette)
 
-# Create a new figure with subplots
-fig, axes = plt.subplots(1, 2, figsize=(20, 10))
+    pairplot_synthetic.fig.savefig(f'pairplot_synthetic_iris_{epochs}.png')
+    plt.close(pairplot_synthetic.fig)  # Close the figure to save memory
 
-# Display the original pairplot image
-axes[0].imshow(original_image)
-axes[0].axis('off')  # Hide the axes
-axes[0].set_title('Original Iris Data')
-
-# Display the synthetic pairplot image
-axes[1].imshow(synthetic_image)
-axes[1].axis('off')  # Hide the axes
-axes[1].set_title('Synthetic Iris Data')
-
-# Adjust layout and display the plot
-plt.tight_layout()
-plt.show()
+print("All pair plots generated and saved.")
